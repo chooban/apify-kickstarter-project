@@ -2,7 +2,7 @@ import { Actor, ProxyConfiguration } from 'apify';
 import { PlaywrightCrawler, RequestOptions } from 'crawlee';
 
 interface Input {
-    projectUrls: string[];
+    projectUrls: {url: string}[];
     maxRequestsPerCrawl: number;
     proxyConfig: ProxyConfiguration,
 }
@@ -38,6 +38,7 @@ const crawler = new PlaywrightCrawler({
             title,
             category,
             categoryParent,
+            url: request.url,
         };
         log.info(JSON.stringify(dataToPush));
         await Actor.pushData(dataToPush);
@@ -46,7 +47,7 @@ const crawler = new PlaywrightCrawler({
 
 const requests = projectUrls.map((u) => {
     return {
-        url: u,
+        url: u.url,
         proxyConfig,
     } as RequestOptions;
 });
