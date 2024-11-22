@@ -8,7 +8,9 @@
 	},
 	"dependencies": {
 		"apify": "^3.2.6",
+		"cheerio": "^1.0.0",
 		"crawlee": "^3.11.5",
+		"got-scraping": "^4.0.8",
 		"playwright": "*"
 	},
 	"devDependencies": {

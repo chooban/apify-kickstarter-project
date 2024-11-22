@@ -3,8 +3,8 @@
     "type": "object",
     "schemaVersion": 1,
     "properties": {
-        "startUrls": {
-            "title": "Start URLs",
+        "projectUrls": {
+            "title": "Project URLs",
             "type": "array",
             "description": "URLs to start with.",
             "editor": "requestListSources",
@@ -19,6 +19,18 @@
             "type": "integer",
             "description": "Maximum number of requests that can be made by this crawler.",
             "default": 100
-        }
+        },
+        "proxyConfig": {
+          "title": "Proxy configuration",
+          "type": "object",
+          "description": "Proxy group to use",
+          "default": {
+              "useApifyProxy": true
+          },
+          "prefill": {
+              "useApifyProxy": true
+          },
+          "editor": "proxy"
+      }
     }
 }

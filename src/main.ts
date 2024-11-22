@@ -1,21 +1,10 @@
-/**
- * This template is a production ready boilerplate for developing with `PlaywrightCrawler`.
- * Use this to bootstrap your projects using the most up-to-date code.
- * If you're looking for examples or want to learn more, see README.
- */
-
-// For more information, see https://docs.apify.com/sdk/js
-import { Actor } from 'apify';
-// For more information, see https://crawlee.dev
-import { PlaywrightCrawler } from 'crawlee';
-// this is ESM project, and as such, it requires you to specify extensions in your relative imports
-// read more about this here: https://nodejs.org/docs/latest-v18.x/api/esm.html#mandatory-file-extensions
-// note that we need to use `.js` even when inside TS files
-import { router } from './routes.js';
+import { Actor, ProxyConfiguration } from 'apify';
+import { PlaywrightCrawler, RequestOptions } from 'crawlee';
 
 interface Input {
-    startUrls: string[];
+    projectUrls: string[];
     maxRequestsPerCrawl: number;
+    proxyConfig: ProxyConfiguration,
 }
 
 // Initialize the Apify SDK
@@ -23,19 +12,45 @@ await Actor.init();
 
 // Structure of input is defined in input_schema.json
 const {
-    startUrls = ['https://crawlee.dev'],
+    projectUrls = [
+        // 'https://www.kickstarter.com/projects/neilslorance/pirate-fun-the-third-trial',
+        // 'https://www.kickstarter.com/projects/goatsflyingpress/the-fables-of-erlking-wood',
+    ],
     maxRequestsPerCrawl = 100,
+    proxyConfig,
 } = await Actor.getInput<Input>() ?? {} as Input;
 
-const proxyConfiguration = await Actor.createProxyConfiguration();
-
 const crawler = new PlaywrightCrawler({
-    proxyConfiguration,
     maxRequestsPerCrawl,
-    requestHandler: router,
+    async requestHandler({ request, log, page }) {
+        log.info(`Requesting: ${request.url}`);
+        const rawProjectDetails = await page.evaluate(() => {
+            // @ts-expect-error It's fine
+            return window.current_project || 'Property not found';
+        });
+        const { data: projectDetails } = JSON.parse(JSON.stringify(rawProjectDetails));
+
+        const title = projectDetails.name;
+        const category = projectDetails.category.name;
+        const categoryParent = projectDetails.category.parent_name;
+
+        const dataToPush = {
+            title,
+            category,
+            categoryParent,
+        };
+        log.info(JSON.stringify(dataToPush));
+        await Actor.pushData(dataToPush);
+    },
 });
 
-await crawler.run(startUrls);
+const requests = projectUrls.map((u) => {
+    return {
+        url: u,
+        proxyConfig,
+    } as RequestOptions;
+});
+await crawler.run(requests);
 
 // Exit successfully
 await Actor.exit();
