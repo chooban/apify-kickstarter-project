@@ -37,7 +37,7 @@ const crawler = new PlaywrightCrawler({
         const dataToPush = {
             title,
             category,
-            categoryParent,
+            parentCategory: categoryParent,
             url: request.url,
         };
         log.info(JSON.stringify(dataToPush));
