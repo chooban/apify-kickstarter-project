@@ -7,18 +7,14 @@ interface Input {
     proxyConfig: ProxyConfiguration,
 }
 
-// Initialize the Apify SDK
 await Actor.init();
 
 // Structure of input is defined in input_schema.json
 const {
-    projectUrls = [
-        // 'https://www.kickstarter.com/projects/neilslorance/pirate-fun-the-third-trial',
-        // 'https://www.kickstarter.com/projects/goatsflyingpress/the-fables-of-erlking-wood',
-    ],
+    projectUrls = [],
     maxRequestsPerCrawl = 100,
     proxyConfig,
-} = await Actor.getInput<Input>() ?? {} as Input;
+}: Input = await Actor.getInput<Input>() ?? {} as Input;
 
 const crawler = new PlaywrightCrawler({
     maxRequestsPerCrawl,
@@ -30,17 +26,51 @@ const crawler = new PlaywrightCrawler({
         });
         const { data: projectDetails } = JSON.parse(JSON.stringify(rawProjectDetails));
 
-        const title = projectDetails.name;
+        if (!projectDetails) {
+            await Actor.pushData({
+                title: 'Unknown',
+                category: 'Unknown',
+                parentCategory: 'Unknown',
+                url: request.url,
+            });
+            return;
+        }
+
         const category = projectDetails.category.name;
         const categoryParent = projectDetails.category.parent_name;
+        const {
+            name: title,
+            blurb,
+            country,
+            currency,
+            currencySymbol,
+            goal,
+            pledged,
+            creator,
+            deadline,
+        } = projectDetails;
 
+        const creatorDetails = {
+            name: creator.name,
+            username: creator.slug,
+            avatar: creator.avatar,
+            url: creator.urls.web,
+        };
         const dataToPush = {
             title,
             category,
+            blurb,
+            country,
+            currency,
+            currencySymbol,
+            goal,
+            pledged,
             parentCategory: categoryParent,
             url: request.url,
+            creatorDetails,
+            image: projectDetails.photo.med,
+            deadline,
         };
-        log.info(JSON.stringify(dataToPush));
         await Actor.pushData(dataToPush);
     },
 });
